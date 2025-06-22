@@ -1,0 +1,107 @@
+﻿@{
+    ViewData["Title"] = "Manage Playlist Tracks";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var playlists = ViewData["Playlists"] as IEnumerable<PlaylistDto>;
+    int? selectedPlaylistId = ViewData["SelectedPlaylistId"] as int?;
+}
+
+<div class="container py-4">
+    <div class="mb-4 d-flex align-items-center gap-2">
+        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+
+        <h1 class="h4 mb-0">Manage Playlist Tracks</h1>
+    </div>
+
+    <!-- Add Track to Playlist Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Add Track to Playlist</h5>
+        </div>
+        <div class="card-body">
+            <form id="addTrackForm" method="post">
+                @Html.AntiForgeryToken()
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="playlistId" class="form-label">Playlist *</label>
+                      <select id="playlistId" name="playlistId" class="form-select" required>
+    <option value="">Select a playlist</option>
+    @if (playlists != null)
+    {
+        foreach (var playlist in playlists)
+        {
+            var isSelected = selectedPlaylistId == playlist.Id ? "selected" : "";
+            @:<option value="@playlist.Id" @isSelected>@playlist.Title</option>
+        }
+    }
+</select>
+
+                        <div class="invalid-feedback" id="playlistIdError"></div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="trackId" class="form-label">Track *</label>
+                        <select id="trackId" name="trackId" class="form-select" required disabled>
+                            <option value="">Select a track</option>
+                        </select>
+                        <div class="invalid-feedback" id="trackIdError"></div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="position" class="form-label">Position *</label>
+                        <input type="number" id="position" name="position" class="form-control" min="1" required placeholder="1" />
+                        <div class="invalid-feedback" id="positionError"></div>
+                    </div>
+                </div>
+
+                <div class="text-end mt-4">
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <i class="bi bi-plus-lg"></i> Add to Playlist
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table of Playlist Tracks -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Current Playlist Tracks</h5>
+        </div>
+        <div class="card-body">
+            <div id="tracksTableContainer">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 10%;">Position</th>
+                                <th style="width: 20%;">Playlist</th>
+                                <th style="width: 25%;">Track</th>
+                                <th style="width: 25%;">Artist</th>
+                                <th style="width: 20%;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tracksTableBody">
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="emptyState" class="text-center py-4" style="display: none;">
+                <p class="mb-0">No tracks assigned to playlists.</p>
+                <p class="text-muted">Use the form above to add tracks.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.preselectedPlaylistId = @(selectedPlaylistId.HasValue ? selectedPlaylistId.Value.ToString() : "null");
+</script>
+
+
+@section Scripts {
+    <script src="~/js/playlisttrack.js"></script>
+}

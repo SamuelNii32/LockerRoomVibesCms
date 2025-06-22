@@ -1,68 +1,88 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using LockerRoomVibesCms.Models;
 using LockerRoomVibesCms.Interfaces;
+using System.Threading.Tasks;
+using LockerRoomVibesCms.Models;
 
 namespace LockerRoomVibesCms.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class PlaylistTracksController : ControllerBase
+    public class PlaylistTracksController : Controller
     {
         private readonly IPlaylistTrackService _playlistTrackService;
+        private readonly IPlaylistService _playlistService;
 
-
-        // Inject the PlaylistTrack service
-        public PlaylistTracksController(IPlaylistTrackService playlistTrackService)
+        public PlaylistTracksController(IPlaylistTrackService playlistTrackService, IPlaylistService playlistService)
         {
             _playlistTrackService = playlistTrackService;
+            _playlistService = playlistService;
         }
 
-
-        /// <summary>
-        /// Adds a track to a playlist.
-        /// </summary>
-        /// <param name="dto">PlaylistTrackDto containing playlist and track IDs</param>
-        /// <returns>200 OK if successful, 400 Bad Request otherwise</returns>
-        [HttpPost("add")]
-        public async Task<IActionResult> AddTrackToPlaylist([FromBody] PlaylistTrackDto dto)
+        // GET: /PlaylistTracks
+        public async Task<IActionResult> Index(int? playlistId)
         {
+            var playlists = await _playlistService.GetPlaylistsAsync();
+            ViewData["Playlists"] = playlists;
+
+            if (playlistId.HasValue)
+            {
+                ViewData["SelectedPlaylistId"] = playlistId.Value;
+            }
+
+            return View();
+        }
+
+        // POST: /PlaylistTrack/Add
+        [HttpPost]
+        public async Task<IActionResult> Add([FromBody] PlaylistTrackDto dto)
+        {
+            Console.WriteLine($"Received Add: PlaylistId={dto.PlaylistId}, TrackId={dto.TrackId}, Position={dto.Position}");
+
+            if (!ModelState.IsValid)
+            {
+                Console.WriteLine("Model state invalid.");
+                return BadRequest("Invalid data.");
+            }
+
             var success = await _playlistTrackService.AddTrackToPlaylistAsync(dto);
-            if (!success) return BadRequest("Could not add track to playlist.");
+            if (!success)
+            {
+                Console.WriteLine("AddTrackToPlaylistAsync returned false.");
+                return BadRequest("Could not add track to playlist.");
+            }
+
             return Ok(new { message = "Track added successfully." });
         }
 
 
 
-        /// <summary>
-        /// Updates the position of a track within a playlist.
-        /// </summary>
-        /// <param name="dto">PlaylistTrackDto containing playlist, track IDs and new position</param>
-        /// <returns>200 OK if successful, 400 Bad Request otherwise</returns>
-        [HttpPut("update")]
-        public async Task<IActionResult> UpdateTrackPosition([FromBody] PlaylistTrackDto dto)
+        // POST: /PlaylistTrack/Update
+        [HttpPost]
+        public async Task<IActionResult> Update(PlaylistTrackDto dto)
         {
+            if (!ModelState.IsValid)
+                return BadRequest("Invalid data.");
+
             var success = await _playlistTrackService.UpdateTrackPositionAsync(dto);
-            if (!success) return BadRequest("Could not update track position.");
+            if (!success)
+                return BadRequest("Could not update track position.");
+
             return Ok();
         }
 
-
-        /// <summary>
-        /// Removes a track from a playlist.
-        /// </summary>
-        /// <param name="dto">PlaylistTrackDto containing playlist and track IDs</param>
-        /// <returns>200 OK if successful, 400 Bad Request otherwise</returns>
-
-        [HttpDelete("remove")]
-        public async Task<IActionResult> RemoveTrackFromPlaylist([FromBody] PlaylistTrackDto dto)
+        // POST: /PlaylistTrack/Remove
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Remove([FromBody] PlaylistTrackDto dto)
         {
+            if (dto == null || dto.PlaylistId == 0 || dto.TrackId == 0)
+                return BadRequest("Invalid request");
+
             var success = await _playlistTrackService.RemoveTrackFromPlaylistAsync(dto);
-            if (!success) return BadRequest("Could not remove track from playlist.");
-            return Ok();
+
+            if (!success)
+                return BadRequest("Could not remove track from playlist.");
+
+            return Ok("Track removed successfully");
         }
-
-
 
     }
-
 }

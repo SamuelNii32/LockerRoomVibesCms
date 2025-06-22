@@ -1,24 +1,204 @@
-﻿@model LockerRoomVibesCms.Models.Team
+﻿@model LockerRoomVibesCms.Models.TeamDetailsDto
 
-@{
-    ViewData["Title"] = "Details";
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="d-flex align-items-center mb-4 fade-in">
+        <a asp-controller="Teams" asp-action="Index" class="btn btn-outline-secondary me-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h2><i class="fas fa-users me-2"></i>@Model.Name Details</h2>
+    </div>
+
+    <div class="row">
+        <!-- Team Info -->
+        <div class="col-lg-4 mb-4">
+            <div class="card fade-in">
+                <div class="card-body text-center">
+                    <img src="@(!string.IsNullOrEmpty(Model.LogoUrl) ? Model.LogoUrl : "/placeholder.svg?height=200&width=200")"
+                         alt="@Model.Name Logo" class="team-logo-large mb-3" />
+                    <h3 class="mb-2">@Model.Name</h3>
+      
+
+                    
+
+                    
+                </div>
+            </div>
+        </div>
+
+        <!-- Playlists -->
+        <div class="col-lg-8">
+            <div class="card fade-in" style="animation-delay: 0.1s;">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-list-music me-2"></i>Team Playlists</h5>
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createPlaylistModal">
+                        <i class="fas fa-plus me-1"></i> Add Playlist
+                    </button>
+
+                </div>
+                <div class="card-body">
+                    @foreach (var playlist in Model.Playlists)
+                    {
+                        <div class="playlist-item border-bottom pb-3 mb-3"
+                             data-playlist-id="@playlist.Id"
+                             data-playlist-title="@playlist.Title"
+                             data-playlist-teamid="@playlist.TeamId"
+                             data-playlist-description="@playlist.Description"
+                             data-playlist-coverimageurl="@playlist.CoverImageUrl"
+                             data-team-id="@playlist.TeamId"
+                             data-name="@playlist.Title">
+                            <div class="d-flex align-items-center">
+                                <img src="@(!string.IsNullOrEmpty(playlist.CoverImageUrl) ? playlist.CoverImageUrl : "/placeholder.svg?height=60&width=60")"
+                                     alt="Playlist Cover" class="playlist-cover me-3" />
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">@playlist.Title</h6>
+                                    @if (!string.IsNullOrEmpty(playlist.Description))
+                                    {
+                                        <p class="text-muted small mb-1">@playlist.Description</p>
+                                    }
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-success me-2">@playlist.TrackCount tracks</span>
+                                    </div>
+                                </div>
+                                <div class="btn-group">
+                                    <a asp-controller="Playlists" asp-action="Details" asp-route-id="@playlist.Id" class="btn btn-sm btn-outline-primary" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-warning edit-btn"
+                                            data-playlist-id="@playlist.Id"
+                                            data-playlist-title="@playlist.Title"
+                                            data-playlist-teamid="@playlist.TeamId"
+                                            data-playlist-description="@playlist.Description"
+                                            data-playlist-coverimageurl="@playlist.CoverImageUrl"
+                                            title="Edit Playlist">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger delete-btn"
+                                            data-playlist-id="@playlist.Id"
+                                            data-playlist-title="@playlist.Title"
+                                            title="Delete Playlist">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="text-center mt-4 pt-3 border-top">
+                        <p class="text-muted mb-0">
+                            <strong>Total:</strong> @Model.Playlists.Count playlists with @Model.Playlists.Sum(p => p.TrackCount) tracks
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @await Html.PartialAsync("~/Views/Playlists/_EditModal.cshtml")
+    @await Html.PartialAsync("~/Views/Playlists/_DeleteModal.cshtml")
+    @await Html.PartialAsync("~/Views/Teams/_CreateModal.cshtml", new LockerRoomVibesCms.Models.PlaylistDto
+{
+    TeamId = Model.Id
+})
+
+
+
+</div>
+@section Scripts {
+    <script src="~/js/playlist.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const createForm = document.getElementById('createPlaylistForm');
+            const createModalEl = document.getElementById('createPlaylistModal');
+            const createModal = new bootstrap.Modal(createModalEl);
+
+            createForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const formData = new FormData(createForm);
+
+                try {
+                    const response = await fetch('@Url.Action("CreateAjax", "Playlists")', {
+                        method: 'POST',
+                        body: formData
+                        // No need to add RequestVerificationToken in headers if it's in the formData
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(errorText);
+                    }
+
+                    const newPlaylist = await response.json();
+
+                    createModal.hide();
+                    createForm.reset();
+
+                    // Find the card body that contains the playlists list specifically
+                    const playlistContainer = document.querySelector('.card .card-body');
+
+                    // Create new playlist element
+                    const div = document.createElement('div');
+                    div.classList.add('playlist-item', 'border-bottom', 'pb-3', 'mb-3');
+                    div.dataset.playlistId = newPlaylist.id;
+                    div.dataset.playlistTitle = newPlaylist.title;
+                    div.dataset.playlistTeamid = newPlaylist.teamId;
+                    div.dataset.playlistDescription = newPlaylist.description || '';
+                    div.dataset.playlistCoverimageurl = newPlaylist.coverImageUrl || '';
+                    div.dataset.teamId = newPlaylist.teamId;
+                    div.dataset.name = newPlaylist.title;
+
+                    div.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            <img src="${newPlaylist.coverImageUrl || '/placeholder.svg?height=60&width=60'}"
+                                 alt="Playlist Cover" class="playlist-cover me-3" />
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">${newPlaylist.title}</h6>
+                                ${newPlaylist.description ? `<p class="text-muted small mb-1">${newPlaylist.description}</p>` : ''}
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-success me-2">0 tracks</span>
+                                </div>
+                            </div>
+                            <div class="btn-group">
+                                <a href="/Playlists/Details/${newPlaylist.id}" class="btn btn-sm btn-outline-primary" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-warning edit-btn"
+                                        data-playlist-id="${newPlaylist.id}"
+                                        data-playlist-title="${newPlaylist.title}"
+                                        data-playlist-teamid="${newPlaylist.teamId}"
+                                        data-playlist-description="${newPlaylist.description || ''}"
+                                        data-playlist-coverimageurl="${newPlaylist.coverImageUrl || ''}"
+                                        title="Edit Playlist">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger delete-btn"
+                                        data-playlist-id="${newPlaylist.id}"
+                                        data-playlist-title="${newPlaylist.title}"
+                                        title="Delete Playlist">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    playlistContainer.appendChild(div);
+
+                    // Use your toast helper if available, else fallback to alert
+                    if (typeof showToast === "function") {
+                        showToast("Playlist created successfully!");
+                    } else {
+                        alert("Playlist created successfully!");
+                    }
+                } catch (error) {
+                    if (typeof showToast === "function") {
+                        showToast("Error creating playlist: " + error.message);
+                    } else {
+                        alert("Error creating playlist: " + error.message);
+                    }
+                }
+            });
+        });
+    </script>
+
 }
-
-<h1>Details</h1>
-
-<div>
-    <h4>Team</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Name)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Name)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
-</div>

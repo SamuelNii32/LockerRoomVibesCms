@@ -20,16 +20,23 @@ namespace LockerRoomVibesCms.Services
         public async Task<IEnumerable<TrackDto>> GetTracksAsync()
         {
             return await _context.Tracks
+                .Include(t => t.PlaylistTracks)                 
+                    .ThenInclude(pt => pt.Playlist)             
                 .Select(t => new TrackDto
                 {
                     Id = t.Id,
                     Title = t.Title,
                     Artist = t.Artist,
                     Mood = t.Mood,
-                    DurationInSeconds = (int)t.Duration.TotalSeconds
+                    AudioUrl = t.AudioUrl,
+                    DurationInSeconds = (int)t.Duration.TotalSeconds,
+                    PlaylistNames = t.PlaylistTracks
+                                      .Select(pt => pt.Playlist.Title)
+                                      .ToList()
                 })
                 .ToListAsync();
         }
+
 
         public async Task<TrackDto> GetTrackAsync(int id)
         {
@@ -44,26 +51,64 @@ namespace LockerRoomVibesCms.Services
                 Title = track.Title,
                 Artist = track.Artist,
                 Mood = track.Mood,
+                AudioUrl = track.AudioUrl,
                 DurationInSeconds = (int)track.Duration.TotalSeconds
+            };
+        }
+
+        public async Task<TrackDetailsDto?> GetTrackDetailsAsync(int id)
+        {
+            var track = await _context.Tracks
+                .Include(t => t.PlaylistTracks)
+                    .ThenInclude(pt => pt.Playlist)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (track == null) return null;
+
+            return new TrackDetailsDto
+            {
+                Id = track.Id,
+                Title = track.Title,
+                Artist = track.Artist,
+                AudioUrl = track.AudioUrl,
+                Playlists = track.PlaylistTracks.Select(pt => new TrackPlaylistDto
+                {
+                    PlaylistId = pt.PlaylistId,
+                    PlaylistTitle = pt.Playlist.Title,
+                    Position = pt.Position,
+                    AudioUrl = pt.Playlist.CoverImageUrl ?? ""
+                }).ToList()
             };
         }
 
         public async Task<TrackDto> CreateTrackAsync(TrackDto trackDto)
         {
+            if (trackDto == null)
+                throw new ArgumentNullException(nameof(trackDto));
+
             var track = new Track
             {
                 Title = trackDto.Title,
                 Artist = trackDto.Artist,
                 Mood = trackDto.Mood,
+                AudioUrl = trackDto.AudioUrl,
                 Duration = TimeSpan.FromSeconds(trackDto.DurationInSeconds)
             };
 
             _context.Tracks.Add(track);
             await _context.SaveChangesAsync();
 
-            trackDto.Id = track.Id;
-            return trackDto;
+            return new TrackDto
+            {
+                Id = track.Id,
+                Title = track.Title,
+                Artist = track.Artist,
+                Mood = track.Mood,
+                AudioUrl = track.AudioUrl,
+                DurationInSeconds = (int)track.Duration.TotalSeconds
+            };
         }
+
 
         public async Task<TrackDto> UpdateTrackAsync(int id, TrackDto trackDto)
         {
@@ -74,6 +119,7 @@ namespace LockerRoomVibesCms.Services
             track.Title = trackDto.Title;
             track.Artist = trackDto.Artist;
             track.Mood = trackDto.Mood;
+            track.AudioUrl = trackDto.AudioUrl;
             track.Duration = TimeSpan.FromSeconds(trackDto.DurationInSeconds);
 
             await _context.SaveChangesAsync();
@@ -84,6 +130,7 @@ namespace LockerRoomVibesCms.Services
                 Title = track.Title,
                 Artist = track.Artist,
                 Mood = track.Mood,
+                AudioUrl = track.AudioUrl,
                 DurationInSeconds = trackDto.DurationInSeconds
             };
         }

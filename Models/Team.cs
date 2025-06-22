@@ -12,6 +12,8 @@ namespace LockerRoomVibesCms.Models
 
         public string? LogoUrl { get; set; }
 
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
 
         //Navigation: One team can have many playlists
         public ICollection<Playlist> Playlists { get; set; }
@@ -21,5 +23,18 @@ namespace LockerRoomVibesCms.Models
         public int id { get; set; }
         public string Name { get; set; }
         public string? LogoUrl { get; set; }
+        public int PlaylistCount { get; set; }
+        public IFormFile? LogoFile { get; set; }
     }
+
+    public class TeamDetailsDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string? LogoUrl { get; set; }
+        public int PlaylistCount { get; set; }
+        public List<PlaylistDto> Playlists { get; set; }
+    }
+
 }
+

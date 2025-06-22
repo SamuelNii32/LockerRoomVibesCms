@@ -1,0 +1,59 @@
+﻿@model LockerRoomVibesCms.Models.TrackDto
+
+@{
+    ViewData["Title"] = "Create Track";
+}
+
+<div class="container mt-4 fade-in">
+    <h2><i class="fas fa-plus-circle text-primary me-2"></i>Create Track</h2>
+    <hr />
+
+    <form asp-action="Create" method="post">
+        <div class="mb-3">
+            <label asp-for="Title" class="form-label"></label>
+            <input asp-for="Title" class="form-control" />
+            <span asp-validation-for="Title" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Artist" class="form-label"></label>
+            <input asp-for="Artist" class="form-control" />
+            <span asp-validation-for="Artist" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Mood" class="form-label"></label>
+            <select asp-for="Mood" class="form-select">
+                <option value="">Select Mood</option>
+                <option value="Energetic">Energetic</option>
+                <option value="Upbeat">Upbeat</option>
+                <option value="Chill">Chill</option>
+                <option value="Motivational">Motivational</option>
+                <option value="Relaxing">Relaxing</option>
+                <option value="Intense">Intense</option>
+            </select>
+            <span asp-validation-for="Mood" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="AudioUrl" class="form-label"></label>
+            <input asp-for="AudioUrl" class="form-control" />
+            <span asp-validation-for="AudioUrl" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="DurationInSeconds" class="form-label"></label>
+            <input asp-for="DurationInSeconds" class="form-control" type="number" min="0" />
+            <span asp-validation-for="DurationInSeconds" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-success">
+            <i class="fas fa-save me-1"></i>Save
+        </button>
+        <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,8 +1,199 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model LockerRoomVibesCms.Models.HomeViewModel
+@{
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+@functions {
+    string TimeAgo(DateTime date)
+    {
+        var span = DateTime.UtcNow - date;
+        if (span.TotalDays >= 1) return $"{(int)span.TotalDays} day(s) ago";
+        if (span.TotalHours >= 1) return $"{(int)span.TotalHours} hour(s) ago";
+        if (span.TotalMinutes >= 1) return $"{(int)span.TotalMinutes} minute(s) ago";
+        return "just now";
+    }
+}
+
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 fw-bold mb-3">Welcome to LockerRoom Vibes CMS</h1>
+                <p class="lead mb-4">Manage your teams, playlists, and tracks all in one place. Create the perfect soundtrack for your team's success.</p>
+            </div>
+            <div class="col-lg-4 text-center">
+                <i class="fas fa-music" style="font-size: 8rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Stats Row -->
+    <div class="row mb-5">
+        <div class="col-md-3 mb-3">
+            <div class="stat-card fade-in">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon bg-primary me-3">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-0">12</h3>
+                        <p class="text-muted mb-0">Total Teams</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card fade-in" style="animation-delay: 0.1s;">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon bg-success me-3">
+                        <i class="fas fa-list-music"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-0">48</h3>
+                        <p class="text-muted mb-0">Total Playlists</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card fade-in" style="animation-delay: 0.2s;">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon bg-warning me-3">
+                        <i class="fas fa-music"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-0">324</h3>
+                        <p class="text-muted mb-0">Total Tracks</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <!-- Teams -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 fade-in quick-action-card cursor-pointer" style="animation-delay: 0.4s;" onclick="window.location.href='/Teams/Index'">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="fas fa-users fa-4x text-primary"></i>
+                    </div>
+                    <h5 class="card-title">Teams Management</h5>
+                    <p class="card-text text-muted">Manage your sports teams, logos, and team information. View team details and associated playlists.</p>
+                    <div class="mt-3">
+                        <button class="btn btn-primary manage-teams-btn" onclick="event.stopPropagation(); window.location.href='/Teams/Index'">
+                            <i class="fas fa-users me-2"></i> Manage Teams
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Playlists -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 fade-in quick-action-card cursor-pointer" style="animation-delay: 0.5s;" onclick="window.location.href='/Playlists/Index'">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="fas fa-list-music fa-4x text-success"></i>
+                    </div>
+                    <h5 class="card-title">Playlists Management</h5>
+                    <p class="card-text text-muted">Create and manage playlists for your teams. Organize tracks by mood, game type, or occasion.</p>
+                    <div class="mt-3">
+                        <button class="btn btn-success" onclick="event.stopPropagation(); window.location.href='/Playlists/Index'">Manage Playlists</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tracks -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 fade-in quick-action-card cursor-pointer" style="animation-delay: 0.6s;" onclick="window.location.href='/Tracks/Index'">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="fas fa-music fa-4x text-warning"></i>
+                    </div>
+                    <h5 class="card-title">Tracks Management</h5>
+                    <p class="card-text text-muted">Add and organize your music tracks. Set moods, manage audio files, and track usage across playlists.</p>
+                    <div class="mt-3">
+                        <button class="btn btn-warning" onclick="event.stopPropagation(); window.location.href='/Tracks/Index'">Manage Track Library</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PlaylistTracks -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 fade-in quick-action-card cursor-pointer" style="animation-delay: 0.7s;" onclick="window.location.href='/PlaylistTracks/Index'">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="fas fa-plus fa-4x text-warning"></i>
+                    </div>
+                    <h5 class="card-title">Manage Tracks</h5>
+                    <p class="card-text text-muted">
+                        Assign tracks to playlists, update their order, or remove tracks from playlists to create the perfect team soundtrack.
+                    </p>
+                    <div class="mt-3">
+                        <button class="btn btn-warning" onclick="event.stopPropagation(); window.location.href='/PlaylistTracks/Index'">Manage Tracks</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card fade-in" style="animation-delay: 0.7s;">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Latest Teams -->
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Latest Teams</h6>
+                            <ul class="list-unstyled">
+                                @foreach (var team in Model.LatestTeams)
+                                {
+                                    <li class="d-flex align-items-center mb-2">
+                                        <img src="@(!string.IsNullOrEmpty(team.LogoUrl) ? team.LogoUrl : "/placeholder.svg?height=30&width=30")"
+                                             alt="@team.Name Logo"
+                                             class="rounded-circle me-2"
+                                             style="width: 30px; height: 30px;" />
+                                        <span>@team.Name</span>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+
+                        <!-- Latest Playlists -->
+                        <!-- Latest Playlists -->
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Latest Playlists</h6>
+                            <ul class="list-unstyled">
+                                @foreach (var playlist in Model.LatestPlaylists)
+                                {
+                                    <li class="d-flex justify-content-between align-items-center mb-2">
+                                        <div>
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-list-music text-success me-2"></i>
+                                                <span>@playlist.Title</span>
+                                            </div>
+                                            <small class="text-muted ms-4">@playlist.TeamName</small>
+                                        </div>
+                                        <small class="text-muted">@TimeAgo(playlist.CreatedAt)</small>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

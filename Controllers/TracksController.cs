@@ -1,138 +1,106 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using LockerRoomVibesCms.Interfaces;
 using LockerRoomVibesCms.Models;
 
 namespace LockerRoomVibesCms.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class TracksController : ControllerBase
-
+    public class TracksController : Controller
     {
         private readonly ITrackService _trackService;
 
-        // Dependency injection of the track service interface
         public TracksController(ITrackService trackService)
         {
             _trackService = trackService;
         }
 
-
-        /// <summary>
-        /// Retrieves the list of all tracks.
-        /// </summary>
-        /// <returns>
-        /// 200 OK
-        /// List of TrackDto objects
-        /// </returns>
-        /// <example>
-        /// GET: api/Tracks
-        /// </example>
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<TrackDto>>> GetTracks()
+        // GET: Tracks
+        public async Task<IActionResult> Index()
         {
             var tracks = await _trackService.GetTracksAsync();
-            return Ok(tracks);
+            return View(tracks); // View will be Views/Tracks/Index.cshtml
         }
 
 
-        /// <summary>
-        /// Retrieves a single track specified by its ID.
-        /// </summary>
-        /// <param name="id">The ID of the track</param>
-        /// <returns>
-        /// 200 OK with the TrackDto
-        /// or
-        /// 404 Not Found if the track does not exist
-        /// </returns>
-        /// <example>
-        /// GET: api/Tracks/5
-        /// </example>
-        [HttpGet("{id}")]
-        public async Task<ActionResult<TrackDto>> GetTrack(int id)
+        [HttpGet("/Tracks/GetAll")]
+        public async Task<IActionResult> GetAll()
+        {
+            var tracks = await _trackService.GetTracksAsync(); 
+            return Json(tracks);
+        }
+
+
+        public async Task<IActionResult> Details(int id)
+        {
+            var track = await _trackService.GetTrackDetailsAsync(id);
+            if (track == null)
+            {
+                return NotFound();
+            }
+
+            return View(track);
+        }
+
+
+        // GET: Tracks/Create
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        // POST: Tracks/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(TrackDto trackDto)
+        {
+            if (!ModelState.IsValid)
+                return View(trackDto);
+
+            await _trackService.CreateTrackAsync(trackDto);
+            return RedirectToAction(nameof(Index));
+        }
+
+        // GET: Tracks/Edit/5
+        public async Task<IActionResult> Edit(int id)
         {
             var track = await _trackService.GetTrackAsync(id);
             if (track == null)
-                return NotFound($"Track with ID {id} not found.");
+                return NotFound();
 
-            return Ok(track);
+            return View(track);
         }
 
-
-
-        /// <summary>
-        /// Creates a new track.
-        /// </summary>
-        /// <param name="trackDto">The TrackDto containing the track details</param>
-        /// <returns>
-        /// 201 Created with the created TrackDto
-        /// or
-        /// 400 Bad Request if creation fails
-        /// </returns>
-        /// <example>
-        /// POST: api/Tracks
-        /// Request Body: { TrackDto }
-        /// </example>
-
+        // POST: Tracks/Edit/5
         [HttpPost]
-        public async Task<ActionResult<TrackDto>> CreateTrack(TrackDto trackDto)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, TrackDto trackDto)
         {
-            var createdTrack = await _trackService.CreateTrackAsync(trackDto);
-            if (createdTrack == null)
-                return BadRequest("Failed to create track.");
+            if (!ModelState.IsValid)
+                return BadRequest(new { success = false, message = "Invalid data." });
 
-            return CreatedAtAction(nameof(GetTrack), new { id = createdTrack.Id }, createdTrack);
+            await _trackService.UpdateTrackAsync(id, trackDto);
+            return Json(new
+            {
+                success = true,
+                title = trackDto.Title,
+                artist = trackDto.Artist,
+                mood = trackDto.Mood,
+                audioUrl = trackDto.AudioUrl,
+                durationInSeconds = trackDto.DurationInSeconds
+            });
         }
 
-        /// <summary>
-        /// Updates an existing track specified by ID.
-        /// </summary>
-        /// <param name="id">The ID of the track to update</param>
-        /// <param name="trackDto">The updated TrackDto data</param>
-        /// <returns>
-        /// 200 OK with updated TrackDto
-        /// or
-        /// 404 Not Found if the track does not exist
-        /// </returns>
-        /// <example>
-        /// PUT: api/Tracks/5
-        /// Request Body: { TrackDto }
-        /// </example>
-        [HttpPut("{id}")]
-        public async Task<ActionResult<TrackDto>> UpdateTrack(int id, TrackDto trackDto)
+        
+     
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
         {
-            var updatedTrack = await _trackService.UpdateTrackAsync(id, trackDto);
-            if (updatedTrack == null)
-                return NotFound($"Track with ID {id} not found.");
-
-            return Ok(updatedTrack);
+            await _trackService.DeleteTrackAsync(id);
+            return Json(new { success = true });
         }
 
 
 
-        /// <summary>
-        /// Deletes a track specified by its ID.
-        /// </summary>
-        /// <param name="id">The ID of the track to delete</param>
-        /// <returns>
-        /// 204 No Content on successful deletion
-        /// or
-        /// 404 Not Found if the track does not exist
-        /// </returns>
-        /// <example>
-        /// DELETE: api/Tracks/5
-        /// </example>
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTrack(int id)
-        {
-            var success = await _trackService.DeleteTrackAsync(id);
-            if (!success)
-                return NotFound($"Track with ID {id} not found.");
-
-            return NoContent();
-        }
     }
 }

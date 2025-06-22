@@ -1,0 +1,54 @@
+﻿<div class="modal fade" id="editPlaylistModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="editPlaylistForm" asp-controller="Playlists" asp-action="Edit" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" id="editPlaylistId" value="" />
+                <input type="hidden" name="ExistingCoverImageUrl" id="existingCoverImageUrl" value="" />
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Playlist</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editPlaylistTitle" class="form-label">Title</label>
+                        <input type="text" class="form-control" name="Title" id="editPlaylistTitle" value="" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editPlaylistTeamId" class="form-label">Team</label>
+                        <select name="TeamId" id="editPlaylistTeamId" class="form-select" required>
+                            @foreach (var team in ViewData["Teams"] as IEnumerable<TeamDto>)
+                            {
+                                <option value="@team.id">@team.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editPlaylistDescription" class="form-label">Description</label>
+                        <textarea name="Description" id="editPlaylistDescription" class="form-control"></textarea>
+                    </div>
+
+                    <!-- File input for cover image -->
+                    <div class="mb-3">
+                        <label for="editPlaylistCoverImageFile" class="form-label">Cover Image</label>
+                        <input type="file" name="CoverImageFile" id="editPlaylistCoverImageFile" class="form-control" accept="image/*" />
+                    </div>
+
+                    <!-- Image preview container -->
+                    <div class="mb-3" id="editCoverImagePreviewContainer" style="display:none;">
+                        <img id="editCoverImagePreview" src="" alt="Cover Image Preview" class="img-fluid rounded" style="max-height: 150px;" />
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-warning">Update</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

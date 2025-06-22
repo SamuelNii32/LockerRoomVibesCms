@@ -8,6 +8,8 @@ namespace LockerRoomVibesCms.Interfaces
     {
         Task<IEnumerable<TrackDto>> GetTracksAsync();
         Task<TrackDto> GetTrackAsync(int id);
+        Task<TrackDetailsDto?> GetTrackDetailsAsync(int id);
+
         Task<TrackDto> CreateTrackAsync(TrackDto trackDto);
         Task<TrackDto> UpdateTrackAsync(int id, TrackDto trackDto);
         Task<bool> DeleteTrackAsync(int id);

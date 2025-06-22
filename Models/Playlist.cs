@@ -19,6 +19,8 @@ namespace LockerRoomVibesCms.Models
         public int TeamId { get; set; }
         public Team Team { get; set; }
 
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
         public ICollection<PlaylistTrack> PlaylistTracks { get; set; }
     }
 
@@ -33,6 +35,11 @@ namespace LockerRoomVibesCms.Models
 
         public string? Description { get; set; }
         public string? CoverImageUrl { get; set; }
+        public int TrackCount { get; set; }
+
+        public DateTime CreatedAt { get; set; }
+
+        public IFormFile? CoverImageFile { get; set; }
     }
 
     // Detailed DTO for showing more info (used in Playlist details)
@@ -47,6 +54,11 @@ namespace LockerRoomVibesCms.Models
         public int TeamId { get; set; }
         public string TeamName { get; set; }
 
-        public List<TrackDto> Tracks { get; set; }
+        public int TotalDurationInSeconds { get; set; }
+
+
+
+        public List<PlaylistTrackDetailsDto> Tracks { get; set; }
+
     }
 }

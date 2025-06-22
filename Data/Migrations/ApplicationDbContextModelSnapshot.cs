@@ -33,6 +33,9 @@ namespace LockerRoomVibesCms.Data.Migrations
                     b.Property<string>("CoverImageUrl")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
@@ -77,6 +80,9 @@ namespace LockerRoomVibesCms.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("LogoUrl")
                         .HasColumnType("nvarchar(max)");
 
@@ -101,6 +107,10 @@ namespace LockerRoomVibesCms.Data.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Artist")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AudioUrl")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 

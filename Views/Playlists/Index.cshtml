@@ -1,41 +1,112 @@
-﻿@model IEnumerable<LockerRoomVibesCms.Models.Playlist>
+﻿@model IEnumerable<PlaylistDto>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Playlists";
 }
 
-<h1>Index</h1>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 fade-in">
+        <h2><i class="fas fa-list-music me-2 text-primary"></i>Playlists Management</h2>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>Add New Playlist
+        </a>
+    </div>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Title)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Team)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Title)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Team.Id)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
+    <div class="row mb-4 fade-in" style="animation-delay: 0.1s;">
+        <div class="col-md-4">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Search playlists..." id="searchInput">
+                <button class="btn btn-outline-secondary" type="button">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" id="teamFilter">
+                <option value="">All Teams</option>
+				@foreach (var team in ViewData["Teams"] as IEnumerable<TeamDto>)
+				{
+					<option value="@team.id">@team.Name</option>
+				}
+            </select>
+        </div>
+       
+        <div class="col-md-2 text-end">
+            <small class="text-muted">Total: <span id="totalCount">@Model.Count()</span> playlists</small>
+        </div>
+    </div>
+
+    <div class="row" id="playlistsContainer">
+        @foreach (var playlist in Model)
+        {
+            <div class="col-md-6 col-lg-4 mb-4 fade-in playlist-item"
+				 data-team-id="@playlist.TeamId"
+                 data-name="@playlist.Title"
+                 data-tracks="@playlist.TrackCount"
+                 style="animation-delay: 0.2s;">
+                <div class="card playlist-card">
+                    <div class="position-relative">
+                        <img src="@(playlist.CoverImageUrl ?? "/placeholder.svg?height=200&width=300")" class="card-img-top playlist-cover" alt="Playlist Cover" />
+                        <div class="position-absolute top-0 end-0 p-2 playlist-actions">
+                            <div class="btn-group-vertical">
+                                <button class="btn btn-sm btn-light" title="Play Playlist">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">@playlist.Title</h5>
+                        <p class="card-text text-muted small flex-grow-1 playlist-description">@playlist.Description</p>
+                        <div class="mb-3">
+                            @if (!string.IsNullOrWhiteSpace(playlist.TeamName))
+                            {
+                                <span class="badge bg-primary team-badge">@playlist.TeamName</span>
+                            }
+                            <span class="badge bg-success team-badge">@playlist.TrackCount tracks</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a asp-action="Details" asp-route-id="@playlist.Id" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye me-1"></i>View
+                            </a>
+                            <div class="btn-group">
+                                <!-- Edit Button to open modal -->
+                                <button class="btn btn-sm btn-outline-warning edit-btn"
+                                        data-playlist-id="@playlist.Id"
+                                        data-playlist-title="@playlist.Title"
+                                        data-playlist-teamid="@playlist.TeamId"
+                                        data-playlist-description="@playlist.Description"
+                                        data-playlist-coverimageurl="@playlist.CoverImageUrl">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+
+
+                                <button class="btn btn-sm btn-outline-danger delete-btn"
+                                        data-playlist-id="@playlist.Id"
+                                        data-playlist-title="@playlist.Title"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deletePlaylistModal">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+
+
+                          
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        
+
+    </div>
+    @await Html.PartialAsync("_EditModal")
+    @await Html.PartialAsync("_DeleteModal")
+
+</div>
+@section Scripts {
+    <script src="~/js/playlist.js"></script>
 }
-    </tbody>
-</table>
+

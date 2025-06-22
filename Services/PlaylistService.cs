@@ -5,36 +5,64 @@ using Microsoft.EntityFrameworkCore;
 using LockerRoomVibesCms.Data;
 using LockerRoomVibesCms.Interfaces;
 using LockerRoomVibesCms.Models;
+using Microsoft.AspNetCore.Hosting;
 
 namespace LockerRoomVibesCms.Services
 {
     public class PlaylistService : IPlaylistService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _webHostEnvironment;   
 
-        public PlaylistService(ApplicationDbContext context)
+        public PlaylistService(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
+            _webHostEnvironment = webHostEnvironment;
         }
 
-        public async Task<PlaylistDto> CreatePlaylistAsync(PlaylistDto playlistDto)
+        public async Task<PlaylistDto?> CreatePlaylistAsync(PlaylistDto playlistDto, IFormFile? coverImageFile, string wwwRootPath)
         {
             var team = await _context.Teams.FindAsync(playlistDto.TeamId);
             if (team == null)
                 return null;
+
+            string? coverImagePath = null;
+
+            if (coverImageFile != null && coverImageFile.Length > 0)
+            {
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(coverImageFile.FileName);
+                var savePath = Path.Combine(wwwRootPath, "images", "playlists");
+
+                if (!Directory.Exists(savePath))
+                    Directory.CreateDirectory(savePath);
+
+                var filePath = Path.Combine(savePath, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await coverImageFile.CopyToAsync(stream);
+                }
+
+                coverImagePath = $"/images/playlists/{fileName}";
+            }
+            else
+            {
+                // If no file uploaded, use any existing URL in DTO
+                coverImagePath = playlistDto.CoverImageUrl;
+            }
 
             var playlist = new Playlist
             {
                 Title = playlistDto.Title,
                 TeamId = playlistDto.TeamId,
                 Description = playlistDto.Description,
-                CoverImageUrl = playlistDto.CoverImageUrl
+                CoverImageUrl = coverImagePath,
+                CreatedAt = DateTime.UtcNow
             };
 
             _context.Playlists.Add(playlist);
             await _context.SaveChangesAsync();
 
-            // Return a new DTO with full data
             return new PlaylistDto
             {
                 Id = playlist.Id,
@@ -45,6 +73,7 @@ namespace LockerRoomVibesCms.Services
                 CoverImageUrl = playlist.CoverImageUrl
             };
         }
+
 
 
 
@@ -91,7 +120,8 @@ namespace LockerRoomVibesCms.Services
                     TeamId = p.TeamId,
                     TeamName = p.Team.Name,
                     Description = p.Description,
-                    CoverImageUrl = p.CoverImageUrl
+                    CoverImageUrl = p.CoverImageUrl,
+                    TrackCount = p.PlaylistTracks.Count()
                 })
                 .ToListAsync();
         }
@@ -108,13 +138,14 @@ namespace LockerRoomVibesCms.Services
                     TeamId = p.TeamId,
                     TeamName = p.Team != null ? p.Team.Name : "Unknown",
                     Description = p.Description,
-                    CoverImageUrl = p.CoverImageUrl
+                    CoverImageUrl = p.CoverImageUrl,
+                    TrackCount = p.PlaylistTracks.Count()
 
                 })
                 .ToListAsync();
         }
 
-        public async Task<PlaylistDto> UpdatePlaylistAsync(int id, PlaylistDto playlistDto)
+        public async Task<PlaylistDto?> UpdatePlaylistAsync(int id, PlaylistDto playlistDto)
         {
             var playlist = await _context.Playlists.FindAsync(id);
             if (playlist == null)
@@ -123,11 +154,26 @@ namespace LockerRoomVibesCms.Services
             playlist.Title = playlistDto.Title;
             playlist.TeamId = playlistDto.TeamId;
             playlist.Description = playlistDto.Description;
-            playlist.CoverImageUrl = playlistDto.CoverImageUrl;
+
+            // Handle file upload
+            if (playlistDto.CoverImageFile != null && playlistDto.CoverImageFile.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images", "playlists");
+                Directory.CreateDirectory(uploadsFolder);
+
+                var uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(playlistDto.CoverImageFile.FileName)}";
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await playlistDto.CoverImageFile.CopyToAsync(stream);
+                }
+
+                playlist.CoverImageUrl = $"/images/playlists/{uniqueFileName}";
+            }
 
             await _context.SaveChangesAsync();
 
-            // Fetch team name for DTO  
             var team = await _context.Teams.FindAsync(playlist.TeamId);
 
             return new PlaylistDto
@@ -135,10 +181,27 @@ namespace LockerRoomVibesCms.Services
                 Id = playlist.Id,
                 Title = playlist.Title,
                 TeamId = playlist.TeamId,
-                TeamName = team != null ? team.Name : "Unknown",
+                TeamName = team?.Name ?? "Unknown",
                 Description = playlist.Description,
                 CoverImageUrl = playlist.CoverImageUrl
             };
+        }
+
+
+        public async Task<List<PlaylistDto>> GetLatestPlaylistsAsync(int count = 2)
+        {
+            return await _context.Playlists
+                .OrderByDescending(p => p.CreatedAt)
+                .Take(count)
+                .Select(p => new PlaylistDto
+                {
+                    Id = p.Id,
+                    Title = p.Title,
+                    TeamId = p.TeamId,
+                    TeamName = p.Team.Name,
+                    CreatedAt = p.CreatedAt 
+                })
+                .ToListAsync();
         }
 
         public async Task<PlaylistDetailsDto> GetPlaylistDetailsAsync(int id)
@@ -152,6 +215,19 @@ namespace LockerRoomVibesCms.Services
             if (playlist == null)
                 return null;
 
+            var tracks = playlist.PlaylistTracks
+                .OrderBy(pt => pt.Position)
+                .Select(pt => new PlaylistTrackDetailsDto
+                {
+                    Id = pt.Track.Id,
+                    Title = pt.Track.Title,
+                    Artist = pt.Track.Artist,
+                    Mood = pt.Track.Mood,
+                    DurationInSeconds = (int)pt.Track.Duration.TotalSeconds,
+                    Position = pt.Position
+                })
+                .ToList();
+
             return new PlaylistDetailsDto
             {
                 Id = playlist.Id,
@@ -160,19 +236,11 @@ namespace LockerRoomVibesCms.Services
                 CoverImageUrl = playlist.CoverImageUrl,
                 TeamId = playlist.TeamId,
                 TeamName = playlist.Team?.Name,
-                Tracks = playlist.PlaylistTracks
-                    .OrderBy(pt => pt.Position)
-                    .Select(pt => new TrackDto
-                    {
-                        Id = pt.Track.Id,
-                        Title = pt.Track.Title,
-                        Artist = pt.Track.Artist,
-                        Mood = pt.Track.Mood,
-                        DurationInSeconds = (int)pt.Track.Duration.TotalSeconds
-                    })
-                    .ToList()
+                Tracks = tracks,
+                TotalDurationInSeconds = tracks.Sum(t => t.DurationInSeconds)  // ✅ Here
             };
         }
+
 
     }
 }

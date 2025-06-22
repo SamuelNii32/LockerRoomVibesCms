@@ -1,203 +1,200 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using LockerRoomVibesCms.Data;
-using LockerRoomVibesCms.Models;
+﻿using Microsoft.AspNetCore.Mvc;
 using LockerRoomVibesCms.Interfaces;
+using LockerRoomVibesCms.Models;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 
 namespace LockerRoomVibesCms.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class PlaylistsController : ControllerBase
+    public class PlaylistsController : Controller
     {
         private readonly IPlaylistService _playlistService;
+        private readonly ITeamService _teamService;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        // Dependency injection of playlist service interface
-        public PlaylistsController(IPlaylistService playlistService)
+        public PlaylistsController(IPlaylistService playlistService, ITeamService teamService, IWebHostEnvironment webHostEnvironment)
         {
             _playlistService = playlistService;
+            _teamService = teamService;
+            _webHostEnvironment = webHostEnvironment;
         }
 
-
-        /// <summary>
-        /// Retrieves all playlists.
-        /// </summary>
-        /// <returns>
-        /// 200 OK
-        /// List of PlaylistDto objects
-        /// </returns>
-        /// <example>
-        /// GET: api/Playlists
-        /// </example>
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<PlaylistDto>>> GetPlaylists()
+        // GET: /Playlist
+        public async Task<IActionResult> Index()
         {
             var playlists = await _playlistService.GetPlaylistsAsync();
-            return Ok(playlists);
+            var teams = await _teamService.GetTeamsAsync();
+            ViewData["Teams"] = teams;  
+                                        
+            return View(playlists); 
         }
 
 
-        /// <summary>
-        /// Retrieves playlists belonging to a specific team.
-        /// </summary>
-        /// <param name="teamId">The ID of the team</param>
-        /// <returns>
-        /// 200 OK with list of PlaylistDto
-        /// or
-        /// 404 Not Found if no playlists exist for the team
-        /// </returns>
-        /// <example>
-        /// GET: api/teams/3/playlists
-        /// </example>
-        [HttpGet("/api/teams/{teamId}/playlists")]
-        public async Task<ActionResult<IEnumerable<PlaylistDto>>> GetPlaylistsByTeam(int teamId)
+        [HttpGet("/Playlists/GetAll")]
+        public async Task<IActionResult> GetAll()
         {
-            var playlists = await _playlistService.GetPlaylistsByTeamAsync(teamId);
+            var playlists = await _playlistService.GetPlaylistsAsync();
+            return Json(playlists);
+        }
 
-            if (playlists == null || !playlists.Any())
+        // GET: /Playlist/Details/5
+        public async Task<IActionResult> Details(int id)
+        {
+            var playlistDetails = await _playlistService.GetPlaylistDetailsAsync(id);
+            if (playlistDetails == null) return NotFound();
+            return View(playlistDetails); // Views/Playlist/Details.cshtml
+        }
+
+        [HttpGet("/Playlists/GetDetails/{id}")]
+        public async Task<IActionResult> GetDetails(int id)
+        {
+            var playlistDetails = await _playlistService.GetPlaylistDetailsAsync(id);
+            if (playlistDetails == null) return NotFound();
+            return Json(playlistDetails);
+        }
+
+
+        // GET: /Playlist/Create
+        public async Task<IActionResult> Create(int? teamId)
+        {
+            var teams = await _teamService.GetTeamsAsync();
+            ViewData["Teams"] = teams;
+
+            var playlistDto = new PlaylistDto();
+
+            if (teamId.HasValue)
             {
-                return NotFound($"No playlists found for Team ID {teamId}");
+                playlistDto.TeamId = teamId.Value;
             }
 
-            return Ok(playlists);
+            return View(playlistDto);
         }
 
-        /// <summary>
-        /// Retrieves a single playlist by its ID.
-        /// </summary>
-        /// <param name="id">The playlist ID</param>
-        /// <returns>
-        /// 200 OK with PlaylistDto
-        /// or
-        /// 404 Not Found if playlist does not exist
-        /// </returns>
-        /// <example>
-        /// GET: api/Playlists/5
-        /// </example>
-        [HttpGet("{id}")]
-        public async Task<ActionResult<PlaylistDto>> GetPlaylist(int id)
-        {
-            var playlist = await _playlistService.GetPlaylistAsync(id);
-            if (playlist == null)
-            {
-                return NotFound();
-            }
-            return Ok(playlist);
-        }
-
-
-        /// <summary>
-        /// Creates a new playlist.
-        /// </summary>
-        /// <param name="playlistDto">Playlist data to create</param>
-        /// <returns>
-        /// 201 Created with PlaylistDto
-        /// or
-        /// 400 Bad Request if related TeamId does not exist
-        /// </returns>
-        /// <example>
-        /// POST: api/Playlists
-        /// Request Body: { PlaylistDto }
-        /// </example>
         [HttpPost]
-        public async Task<ActionResult<PlaylistDto>> CreatePlaylist(PlaylistDto playlistDto)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(PlaylistDto playlistDto, IFormFile? coverImageFile)
         {
-            var createdPlaylist = await _playlistService.CreatePlaylistAsync(playlistDto);
-
-            if (createdPlaylist == null)
+            if (!ModelState.IsValid)
             {
-                // Return 400 Bad Request
-                return BadRequest($"Team with ID {playlistDto.TeamId} does not exist.");
+                var teams = await _teamService.GetTeamsAsync();
+                ViewData["Teams"] = teams;
+                return View(playlistDto);
             }
 
-            return CreatedAtAction(nameof(GetPlaylist), new { id = createdPlaylist.Id }, createdPlaylist);
+            string wwwRootPath = _webHostEnvironment.WebRootPath;
+
+            var result = await _playlistService.CreatePlaylistAsync(playlistDto, coverImageFile, wwwRootPath);
+
+            if (result == null)
+            {
+                ModelState.AddModelError("", "Failed to create playlist. Ensure the Team ID exists.");
+
+                var teams = await _teamService.GetTeamsAsync();
+                ViewData["Teams"] = teams;
+
+                return View(playlistDto);
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> CreateAjax(PlaylistDto playlistDto, IFormFile? coverImageFile)
+{
+    if (!ModelState.IsValid)
+    {
+        // Return validation errors as JSON
+        var errors = ModelState.Values
+                       .SelectMany(v => v.Errors)
+                       .Select(e => e.ErrorMessage)
+                       .ToList();
+
+        return BadRequest(new { success = false, errors });
+    }
+
+    string wwwRootPath = _webHostEnvironment.WebRootPath;
+
+    var createdPlaylist = await _playlistService.CreatePlaylistAsync(playlistDto, coverImageFile, wwwRootPath);
+
+    if (createdPlaylist == null)
+    {
+        return BadRequest(new { success = false, errors = new[] { "Failed to create playlist." } });
+    }
+
+    // Return success and new playlist data (adjust as needed)
+    return Json(new
+    {
+        success = true,
+        playlist = new
+        {
+            id = createdPlaylist.Id,
+            title = createdPlaylist.Title,
+            description = createdPlaylist.Description,
+            coverImageUrl = createdPlaylist.CoverImageUrl,
+            teamId = createdPlaylist.TeamId,
+            trackCount = 0
+        }
+    });
+}
+
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, [FromForm] PlaylistDto playlistDto)
+        {
+            if (id != playlistDto.Id)
+                return BadRequest(new { success = false, message = "ID mismatch." });
+
+            if (!ModelState.IsValid)
+                return BadRequest(new { success = false, message = "Invalid data." });
+
+            var updated = await _playlistService.UpdatePlaylistAsync(id, playlistDto);
+            if (updated == null)
+                return NotFound(new { success = false, message = "Playlist not found." });
+
+            return Json(new
+            {
+                success = true,
+                id = updated.Id,
+                title = updated.Title,
+                teamId = updated.TeamId,
+                teamName = updated.TeamName,
+                description = updated.Description,
+                coverImageUrl = updated.CoverImageUrl,
+                trackCount = updated.TrackCount
+            });
         }
 
 
-        /// <summary>
-        /// Updates an existing playlist by ID.
-        /// </summary>
-        /// <param name="id">The ID of the playlist to update</param>
-        /// <param name="playlistDto">The updated playlist data</param>
-        /// <returns>
-        /// 200 OK with updated PlaylistDto
-        /// or
-        /// 404 Not Found if playlist does not exist
-        /// </returns>
-        /// <example>
-        /// PUT: api/Playlists/5
-        /// Request Body: { PlaylistDto }
-        /// </example>
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdatePlaylist(int id, PlaylistDto playlistDto)
-        {
-            var updatedPlaylist = await _playlistService.UpdatePlaylistAsync(id, playlistDto);
-
-            if (updatedPlaylist == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(updatedPlaylist);
-        }
-
-        /// <summary>
-        /// Deletes a playlist specified by ID.
-        /// </summary>
-        /// <param name="id">The ID of the playlist to delete</param>
-        /// <returns>
-        /// 204 No Content on successful deletion
-        /// or
-        /// 404 Not Found if playlist does not exist
-        /// </returns>
-        /// <example>
-        /// DELETE: api/Playlists/5
-        /// </example>
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeletePlaylist(int id)
+        // POST: /Playlist/Delete/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
         {
             var deleted = await _playlistService.DeletePlaylistAsync(id);
-
             if (!deleted)
-            {
-                return NotFound();
-            }
+                return NotFound(new { success = false, message = "Playlist not found." });
 
-            return NoContent(); // 204 No Content is standard for successful DELETE
+            return Json(new { success = true });
         }
 
 
-        /// <summary>
-        /// Retrieves detailed info for a playlist, including associated tracks.
-        /// </summary>
-        /// <param name="id">The playlist ID</param>
-        /// <returns>
-        /// 200 OK with PlaylistDetailsDto
-        /// or
-        /// 404 Not Found if playlist does not exist
-        /// </returns>
-        /// <example>
-        /// GET: api/Playlists/5/details
-        /// </example>
-
-        [HttpGet("{id}/details")]
-        public async Task<ActionResult<PlaylistDetailsDto>> GetPlaylistDetails(int id)
+        public async Task<IActionResult> EditModal(int id)
         {
-            var details = await _playlistService.GetPlaylistDetailsAsync(id);
-            if (details == null)
-                return NotFound($"No playlist found with ID {id}");
-
-            return Ok(details);
+            var playlist = await _playlistService.GetPlaylistAsync(id);
+            if (playlist == null) return NotFound();
+            return PartialView("_EditModal", playlist); 
         }
 
-
-
+        
+        public async Task<IActionResult> DeleteModal(int id)
+        {
+            var playlist = await _playlistService.GetPlaylistAsync(id);
+            if (playlist == null) return NotFound();
+            return PartialView("_DeleteModal", playlist); 
+        }
 
     }
 }

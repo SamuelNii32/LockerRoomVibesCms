@@ -25,6 +25,17 @@ namespace LockerRoomVibesCms.Services
 
             if (existing != null) return false;
 
+            // ✅ Shift tracks at or after the desired position up by 1
+            var tracksToShift = await _context.PlaylistTracks
+                .Where(pt => pt.PlaylistId == dto.PlaylistId && pt.Position >= dto.Position)
+                .OrderByDescending(pt => pt.Position) // Start shifting from the end
+                .ToListAsync();
+
+            foreach (var pt in tracksToShift)
+            {
+                pt.Position += 1;
+            }
+
             var playlistTrack = new PlaylistTrack
             {
                 PlaylistId = dto.PlaylistId,
@@ -37,6 +48,8 @@ namespace LockerRoomVibesCms.Services
 
             return true;
         }
+
+
 
         public async Task<bool> UpdateTrackPositionAsync(PlaylistTrackDto dto)
         {
@@ -58,11 +71,25 @@ namespace LockerRoomVibesCms.Services
 
             if (playlistTrack == null) return false;
 
+            int removedPosition = playlistTrack.Position;
+
             _context.PlaylistTracks.Remove(playlistTrack);
+
+            // Shift down tracks after the removed one
+            var tracksToUpdate = await _context.PlaylistTracks
+                .Where(pt => pt.PlaylistId == dto.PlaylistId && pt.Position > removedPosition)
+                .ToListAsync();
+
+            foreach (var pt in tracksToUpdate)
+            {
+                pt.Position -= 1;
+            }
+
             await _context.SaveChangesAsync();
 
             return true;
         }
+
     }
 
 }

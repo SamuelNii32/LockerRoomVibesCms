@@ -19,4 +19,15 @@
         public int Position { get; set; }  
     }
 
+
+    public class PlaylistTrackDetailsDto
+    {
+        public int Id { get; set; }           
+        public string Title { get; set; }
+        public string Artist { get; set; }
+        public string Mood { get; set; }
+        public int DurationInSeconds { get; set; }
+        public int Position { get; set; }      
+    }
+
 }

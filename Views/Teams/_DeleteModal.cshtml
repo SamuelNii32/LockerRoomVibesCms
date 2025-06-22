@@ -1,0 +1,38 @@
+﻿@* Delete Confirmation Modal Partial *@
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="deleteForm" asp-controller="Teams" asp-action="DeleteConfirmed" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="teamIdToDelete" />
+
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                        Confirm Delete
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <p>Are you sure you want to delete the team <strong id="teamNameToDelete"></strong>?</p>
+                    <div class="alert alert-danger">
+                        <i class="fas fa-warning me-2"></i>
+                        <strong>Warning:</strong> This action cannot be undone and will also delete all associated playlists.
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-danger" id="confirmDeleteBtn">
+                        <i class="fas fa-trash me-1"></i>Delete Team
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+

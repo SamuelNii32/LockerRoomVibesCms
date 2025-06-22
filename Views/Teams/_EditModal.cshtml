@@ -1,0 +1,57 @@
+﻿<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form id="editForm" method="post" asp-controller="Teams" asp-action="Edit" enctype="multipart/form-data">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-edit me-2"></i>Edit Team
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editTeamId" name="id" />
+
+                    <div class="mb-3">
+                        <label for="editTeamName" class="form-label">Team Name</label>
+                        <input type="text" class="form-control" id="editTeamName" name="Name" required autocomplete="off" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editLogoFile" class="form-label">Team Logo</label>
+                        <input type="file" class="form-control" id="editLogoFile" name="logoFile" />
+                    </div>
+
+                    <!-- Optional preview of existing logo -->
+                    <div class="mb-3">
+                        <img id="editLogoPreview" src="" alt="Current Logo"
+                             class="img-thumbnail" style="max-height: 80px; display: none;" />
+
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Save Changes
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+            <div id="errorToast" class="toast align-items-center text-bg-danger border-0"
+                 role="alert" aria-live="assertive" aria-atomic="true"
+                 data-bs-delay="5000" data-bs-autohide="true">
+                <div class="d-flex">
+                    <div class="toast-body" id="errorToastBody">
+                        An error occurred.
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                            data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

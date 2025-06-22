@@ -1,153 +1,161 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using LockerRoomVibesCms.Data;
-using LockerRoomVibesCms.Models;
+﻿using Microsoft.AspNetCore.Mvc;
 using LockerRoomVibesCms.Interfaces;
+using LockerRoomVibesCms.Models;
+using Microsoft.AspNetCore.Hosting;
+
 
 namespace LockerRoomVibesCms.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class TeamsController : ControllerBase
+    public class TeamsController : Controller
     {
         private readonly ITeamService _teamService;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public TeamsController(ITeamService teamService)
+        public TeamsController(ITeamService teamService, IWebHostEnvironment webHostEnvironment)
         {
             _teamService = teamService;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         /// <summary>
-        /// Returns a list of all teams.
+        /// Returns a view with a list of all teams.
         /// </summary>
-        /// <returns>
-        /// 200 OK
-        /// [{TeamDto}, {TeamDto}, ...]
-        /// </returns>
-        /// <example>
-        /// GET: api/Teams -> [{TeamDto}, {TeamDto}, ...]
-        /// </example>
-
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<TeamDto>>> GetTeams()
+        /// <returns>View with team list</returns>
+        public async Task<IActionResult> Index()
         {
             var teams = await _teamService.GetTeamsAsync();
-            return Ok(teams);
+            return View(teams);
         }
 
-
         /// <summary>
-        /// Returns a single team by its ID.
+        /// Returns a view with detailed info for a team including its playlists.
         /// </summary>
-        /// <param name="id">The ID of the team.</param>
-        /// <returns>
-        /// 200 OK
-        /// {TeamDto}
-        /// or
-        /// 404 Not Found
-        /// </returns>
-        /// <example>
-        /// GET: api/Teams/3 -> {TeamDto}
-        /// </example>
-
-        [HttpGet("{id}")]
-        public async Task<ActionResult<TeamDto>> GetTeam(int id)
+        /// <param name="id">Team ID</param>
+        /// <returns>TeamDetails view or NotFound</returns>
+        public async Task<IActionResult> Details(int id)
         {
-            var team = await _teamService.GetTeamAsync(id);
+            var team = await _teamService.GetTeamDetailsAsync(id);
             if (team == null) return NotFound();
-            return Ok(team);
+
+            var teams = await _teamService.GetTeamsAsync(); 
+            ViewData["Teams"] = teams;
+
+            return View(team);
         }
 
+        /// <summary>
+        /// Displays the form for creating a new team.
+        /// </summary>
+        /// <returns>Create view</returns>
+        public IActionResult Create()
+        {
+            return View();
+        }
 
         /// <summary>
-        /// Creates a new team.
+        /// Handles POST request to create a new team.
         /// </summary>
-        /// <param name="teamDto">The information for the new team.</param>
-        /// <returns>
-        /// 201 Created
-        /// Location: api/Teams/{id}
-        /// {TeamDto}
-        /// or
-        /// 400 Bad Request
-        /// </returns>
-        /// <example>
-        /// POST: api/Teams
-        /// Request Body: {TeamDto}
-        /// -> Response: 201 Created
-        /// </example>
-
+        /// <param name="teamDto">Team data</param>
+        /// <returns>Redirect to Index or re-render form with validation errors</returns>
         [HttpPost]
-        public async Task<ActionResult<TeamDto>> CreateTeam(TeamDto teamDto)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(TeamDto teamDto, IFormFile logoFile)
         {
+            if (!ModelState.IsValid) return View(teamDto);
+
             try
             {
-                var createdTeam = await _teamService.CreateTeamAsync(teamDto);
-                return CreatedAtAction(nameof(GetTeam), new { id = createdTeam.id }, createdTeam);
+                string wwwRootPath = _webHostEnvironment.WebRootPath;
+                await _teamService.CreateTeamAsync(teamDto, logoFile, wwwRootPath);
+                return RedirectToAction(nameof(Index));
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                ModelState.AddModelError("", ex.Message);
+                return View(teamDto);
             }
         }
 
 
+        /// <summary>
+        /// Displays the form for editing an existing team.
+        /// </summary>
+        /// <param name="id">Team ID</param>
+        /// <returns>Edit view or NotFound</returns>
+        public async Task<IActionResult> Edit(int id)
+        {
+            var team = await _teamService.GetTeamAsync(id);
+            if (team == null) return NotFound();
+            return View(team);
+        }
 
         /// <summary>
-        /// Updates an existing team.
+        /// Handles POST request to update an existing team.
         /// </summary>
-        /// <param name="id">The ID of the team to update.</param>
-        /// <param name="teamDto">The updated team data.</param>
-        /// <returns>
-        /// 200 OK
-        /// or
-        /// 404 Not Found
-        /// </returns>
-        /// <example>
-        /// PUT: api/Teams/3
-        /// Request Body: {TeamDto}
-        /// -> Response: 200 OK
-        /// </example>
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateTeam(int id, TeamDto teamDto)
+        /// <param name="id">Team ID</param>
+        /// <param name="teamDto">Updated team data</param>
+        /// <returns>Redirect to Index or re-render form</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, TeamDto teamDto, IFormFile logoFile)
         {
-            var updatedTeam = await _teamService.UpdateTeamAsync(id, teamDto);
-            if (updatedTeam == null) return NotFound();
-            return Ok(updatedTeam);
+            if (id != teamDto.id)
+                return NotFound();
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState); // important for AJAX
+
+            string wwwRootPath = _webHostEnvironment.WebRootPath;
+
+            var updated = await _teamService.UpdateTeamAsync(id, teamDto, logoFile, wwwRootPath);
+
+            if (updated == null)
+                return NotFound();
+
+            // Return JSON for AJAX success handling
+            return Json(new
+            {
+                id = updated.id,
+                name = updated.Name,
+                logoUrl = updated.LogoUrl
+            });
         }
 
 
+
         /// <summary>
-        /// Deletes a team by its ID.
+        /// Displays the confirmation page for deleting a team.
         /// </summary>
-        /// <param name="id">The ID of the team to delete.</param>
-        /// <returns>
-        /// 204 No Content
-        /// or
-        /// 404 Not Found
-        /// </returns>
-        /// <example>
-        /// DELETE: api/Teams/3
-        /// -> Response: 204 No Content
-        /// </example>
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTeam(int id)
+        /// <param name="id">Team ID</param>
+        /// <returns>Delete confirmation view or NotFound</returns>
+        public async Task<IActionResult> Delete(int id)
         {
-            var deleted = await _teamService.DeleteTeamAsync(id);
-            if (!deleted) return NotFound();
-            return NoContent();
+            var team = await _teamService.GetTeamAsync(id);
+            if (team == null) return NotFound();
+            return View(team);
         }
 
+        /// <summary>
+        /// Handles AJAX POST request to delete a team.
+        /// Returns a JSON result indicating success or failure.
+        /// </summary>
+        /// <param name="id">Team ID</param>
+        /// <returns>JSON result with success status</returns>
 
-
-
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            try
+            {
+                await _teamService.DeleteTeamAsync(id);
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
 
     }
-
 }
-

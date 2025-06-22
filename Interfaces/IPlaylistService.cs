@@ -10,9 +10,10 @@ namespace LockerRoomVibesCms.Interfaces
         Task<IEnumerable<PlaylistDto>> GetPlaylistsByTeamAsync(int teamId);
         Task<PlaylistDto> GetPlaylistAsync(int id);
         Task<PlaylistDetailsDto> GetPlaylistDetailsAsync(int id);
+        Task<List<PlaylistDto>> GetLatestPlaylistsAsync(int count = 2);
 
-        Task<PlaylistDto> CreatePlaylistAsync(PlaylistDto playlistDto);
-        Task<PlaylistDto> UpdatePlaylistAsync(int id, PlaylistDto playlistDto);
+        Task<PlaylistDto?> CreatePlaylistAsync(PlaylistDto playlistDto, IFormFile? coverImageFile, string wwwRootPath);
+        Task<PlaylistDto?> UpdatePlaylistAsync(int id, PlaylistDto playlistDto);
         Task<bool> DeletePlaylistAsync(int id);
     }
 }

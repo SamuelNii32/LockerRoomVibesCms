@@ -1,0 +1,56 @@
+﻿
+
+<div class="modal fade" id="editTrackModal" tabindex="-1" aria-labelledby="editTrackModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="editTrackForm" asp-action="Edit" asp-controller="Tracks" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" id="editTrackId" />
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editTrackModalLabel">Edit Track</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editTrackTitle" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="editTrackTitle" name="Title" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editTrackArtist" class="form-label">Artist</label>
+                        <input type="text" class="form-control" id="editTrackArtist" name="Artist" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editTrackMood" class="form-label">Mood</label>
+                        <select class="form-select" id="editTrackMood" name="Mood" required>
+                            <option value="Energetic">Energetic</option>
+                            <option value="Upbeat">Upbeat</option>
+                            <option value="Chill">Chill</option>
+                            <option value="Motivational">Motivational</option>
+                            <option value="Relaxing">Relaxing</option>
+                            <option value="Intense">Intense</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editTrackAudioUrl" class="form-label">Audio URL</label>
+                        <input type="text" class="form-control" id="editTrackAudioUrl" name="AudioUrl" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editTrackDuration" class="form-label">Duration (seconds)</label>
+                        <input type="number" class="form-control" id="editTrackDuration" name="DurationInSeconds" min="0" required />
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
